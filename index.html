@@ -10,6 +10,52 @@
   <title>Shard Guard | Web3 Key Management</title>
   <!-- Telegram WebApp Script -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Eruda Dev Tools -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>
+    // Initialize Eruda
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check for dev mode or query param
+      const isDevMode = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.search.includes('debug=true');
+      
+      if (isDevMode) {
+        eruda.init({
+          tool: ['console', 'elements', 'network', 'resources', 'info'],
+          useShadowDom: true,
+          autoScale: true,
+          defaults: {
+            displaySize: 50,
+            transparency: 0.9,
+            theme: 'Monokai Pro'
+          }
+        });
+        
+        // Add timestamp to logs
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        console.log = function() {
+          const time = new Date().toLocaleTimeString();
+          originalLog.apply(console, [`[${time}]`, ...arguments]);
+        };
+        
+        console.warn = function() {
+          const time = new Date().toLocaleTimeString();
+          originalWarn.apply(console, [`[${time}]`, ...arguments]);
+        };
+        
+        console.error = function() {
+          const time = new Date().toLocaleTimeString();
+          originalError.apply(console, [`[${time}]`, ...arguments]);
+        };
+        
+        console.log('Eruda dev tools initialized');
+      }
+    });
+  </script>
   <style>
     /* Initial loading spinner */
     .initial-loader {

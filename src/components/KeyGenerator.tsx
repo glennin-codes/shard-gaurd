@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Button from './Button';
 import Input from './Input';
@@ -10,7 +10,9 @@ import {
   splitPrivateKey,
   getAddressFromPrivateKey,
   isValidPrivateKey,
+  initializeSecrets,
 } from '../utils/shamir';
+import { toast } from 'react-hot-toast';
 
 const KeyGenerator = () => {
   const [privateKey, setPrivateKey] = useState('');
@@ -18,12 +20,42 @@ const KeyGenerator = () => {
   const [threshold, setThreshold] = useState(2);
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [step, setStep] = useState(1);
   const { user } = useTelegram();
   const { saveShares, userShares } = useShares();
 
+  // Initialize secrets.js on component mount
+  useEffect(() => {
+    const init = async () => {
+      try {
+        console.log('Attempting to initialize security features...');
+        const success = await initializeSecrets();
+        setIsInitialized(success);
+        
+        if (success) {
+          console.log('Security features initialized successfully');
+        } else {
+          console.error('Failed to initialize security features');
+          toast.error('Failed to initialize security features. Please refresh the page or try a different browser.');
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        toast.error('Failed to initialize security features: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      }
+    };
+    
+    init();
+  }, []);
+
   const handleGenerateKey = () => {
     setIsLoading(true);
+    
+    if (!isInitialized) {
+      toast.error('Security features not initialized. Please refresh the page.');
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const newKey = generatePrivateKey();
@@ -32,6 +64,7 @@ const KeyGenerator = () => {
       setStep(2);
     } catch (error) {
       console.error('Failed to generate key:', error);
+      toast.error('Failed to generate key: ' + (error instanceof Error ? error.message : 'Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -39,6 +72,7 @@ const KeyGenerator = () => {
 
   const handleImportKey = () => {
     if (!isValidPrivateKey(privateKey)) {
+      toast.error('Invalid private key format. Please check and try again.');
       return;
     }
 
@@ -49,26 +83,43 @@ const KeyGenerator = () => {
       setStep(2);
     } catch (error) {
       console.error('Failed to import key:', error);
+      toast.error('Failed to process key. Please check your input and try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSplitKey = () => {
-    if (!privateKey || !user?.id) return;
+  const handleSplitKey = async () => {
+    if (!privateKey || !user?.id) {
+      toast.error('Missing private key or user information.');
+      return;
+    }
+
+    if (!isInitialized) {
+      toast.error('Security features not initialized. Please refresh the page or try a different browser.');
+      return;
+    }
 
     setIsLoading(true);
     
     try {
-      const shares = splitPrivateKey(privateKey, {
+      // Validate threshold isn't bigger than total shares
+      if (threshold > totalShares) {
+        throw new Error('Threshold cannot be greater than total shares');
+      }
+
+      console.log('Attempting to split key with', {totalShares, threshold});
+      const shares = await splitPrivateKey(privateKey, {
         totalShares,
         threshold,
       });
       
       saveShares(user.id, shares);
       setStep(3);
+      toast.success('Key successfully split into shares!');
     } catch (error) {
       console.error('Failed to split key:', error);
+      toast.error('Failed to split key: ' + (error instanceof Error ? error.message : 'Please try again.'));
     } finally {
       setIsLoading(false);
     }

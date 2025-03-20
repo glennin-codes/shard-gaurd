@@ -2,6 +2,16 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 // Import but also prepare for direct window.Telegram usage
 import WebApp from '@twa-dev/sdk';
 
+// Add types for global Telegram object
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp;
+    };
+    enableErudaDebugger?: () => void;
+  }
+}
+
 // Define an interface for the Telegram WebApp global object
 interface TelegramWebApp {
   initData: string;
@@ -28,6 +38,7 @@ interface TelegramContextType {
   toggleTheme: () => void;
   ready: boolean;
   error: string | null;
+  debug: () => void; // New debug function to help troubleshoot
 }
 
 const TelegramContext = createContext<TelegramContextType>({
@@ -35,14 +46,73 @@ const TelegramContext = createContext<TelegramContextType>({
   isDarkMode: false,
   toggleTheme: () => {},
   ready: false,
-  error: null
+  error: null,
+  debug: () => {} // Default empty function
 });
+
+// Helper to create a debug report
+const createDebugReport = () => {
+  const report = {
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    language: navigator.language,
+    windowInnerWidth: window.innerWidth,
+    windowInnerHeight: window.innerHeight,
+    telegram: {
+      global: typeof window !== 'undefined' ? !!window.Telegram : false,
+      webApp: typeof window !== 'undefined' && window.Telegram ? !!window.Telegram.WebApp : false,
+    },
+    importedWebApp: {
+      exists: typeof WebApp !== 'undefined',
+      initData: typeof WebApp !== 'undefined' ? !!WebApp.initData : false,
+      initDataUnsafe: typeof WebApp !== 'undefined' ? !!WebApp.initDataUnsafe : false,
+    },
+    localStorage: {
+      available: (() => {
+        try {
+          localStorage.setItem('test', 'test');
+          localStorage.removeItem('test');
+          return true;
+        } catch (e) {
+          return false;
+        }
+      })()
+    },
+    // Additional details that might be useful
+    referrer: document.referrer,
+    location: window.location.href,
+    protocol: window.location.protocol,
+    host: window.location.host
+  };
+  
+  return report;
+};
 
 export const TelegramProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<TelegramContextType['user']>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Function to print debug information using Eruda if available
+  const debug = () => {
+    // Create debug report
+    const report = createDebugReport();
+    
+    // Log the report to console
+    console.log('------- DEBUG REPORT -------');
+    console.log(JSON.stringify(report, null, 2));
+    console.log('----------------------------');
+    
+    // Try to enable Eruda if not already initialized
+    if (typeof window !== 'undefined' && window.enableErudaDebugger) {
+      window.enableErudaDebugger();
+    }
+    
+    // Also return the report object for programmatic use
+    return report;
+  };
 
   useEffect(() => {
     console.log('TelegramContext: Initializing...');
@@ -54,6 +124,9 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
         setUser({ id: 'fallback123' });
         setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
         setReady(true);
+        
+        // Log debug information when fallback is triggered
+        debug();
       }
     }, 3000);
     
@@ -62,7 +135,8 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
       // Check if we're in development environment
       const isDev = window.location.hostname === 'localhost' || 
                     window.location.hostname === '127.0.0.1' ||
-                    window.location.protocol === 'file:';
+                    window.location.protocol === 'file:' ||
+                    window.location.search.includes('debug=true');
       
       if (isDev) {
         console.log('TelegramContext: Running in development mode');
@@ -75,8 +149,7 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
       
       // Try to use the global Telegram object
       const telegramWebApp: TelegramWebApp | undefined = 
-        // @ts-ignore - window.Telegram might not be defined in TypeScript
-        typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+        typeof window !== 'undefined' && window.Telegram ? window.Telegram.WebApp : undefined;
       
       if (telegramWebApp) {
         console.log('TelegramContext: Using global Telegram.WebApp object');
@@ -124,6 +197,9 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
         setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
         setReady(true);
         clearTimeout(fallbackTimer);
+        
+        // Log debug information on error
+        debug();
         return;
       }
       
@@ -171,12 +247,18 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
             setUser({ id: 'user987654321' });
             setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
             setReady(true);
+            
+            // Log debug information when fallback is needed
+            debug();
           }
         } catch (err) {
           console.error('Failed inside setTimeout:', err);
           setUser({ id: 'error123456789' });
           setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
           setReady(true);
+          
+          // Log debug information on error
+          debug();
         }
         
         clearTimeout(fallbackTimer);
@@ -189,6 +271,9 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
       setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
       setReady(true);
       clearTimeout(fallbackTimer);
+      
+      // Log debug information on error
+      debug();
     }
     
     return () => {
@@ -211,7 +296,7 @@ export const TelegramProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <TelegramContext.Provider value={{ user, isDarkMode, toggleTheme, ready, error }}>
+    <TelegramContext.Provider value={{ user, isDarkMode, toggleTheme, ready, error, debug }}>
       {children}
     </TelegramContext.Provider>
   );

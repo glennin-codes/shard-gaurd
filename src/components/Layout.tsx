@@ -8,7 +8,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const { ready, error } = useTelegram();
+  const { ready, error, debug } = useTelegram();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   
   // Set a fallback timer to prevent getting stuck on loading screen
@@ -32,16 +32,24 @@ const Layout = ({ children }: LayoutProps) => {
         </p>
         {loadingTimeout && (
           <div className="max-w-md">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
               The app is taking longer than expected to load. If you're using this app in Telegram, 
               try refreshing or opening it directly from the Telegram app.
             </p>
-            <button 
-              className="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 transition"
-              onClick={() => window.location.reload()}
-            >
-              Refresh Page
-            </button>
+            <div className="flex gap-3">
+              <button 
+                className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 transition"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </button>
+              <button 
+                className="rounded-lg bg-slate-600 px-4 py-2 text-white hover:bg-slate-700 transition"
+                onClick={debug}
+              >
+                Debug
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -59,12 +67,20 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
         <h2 className="mb-2 text-xl font-bold text-slate-900 dark:text-white">Initialization Error</h2>
         <p className="mb-4 text-slate-700 dark:text-slate-300">{error}</p>
-        <button 
-          className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 transition"
-          onClick={() => window.location.reload()}
-        >
-          Refresh Page
-        </button>
+        <div className="flex gap-3">
+          <button 
+            className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 transition"
+            onClick={() => window.location.reload()}
+          >
+            Refresh Page
+          </button>
+          <button 
+            className="rounded-lg bg-slate-600 px-4 py-2 text-white hover:bg-slate-700 transition"
+            onClick={debug}
+          >
+            Show Debug Info
+          </button>
+        </div>
       </div>
     );
   }
