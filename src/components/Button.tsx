@@ -1,7 +1,17 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+// Create a type that combines motion props with our custom props
+interface ButtonProps extends Omit<HTMLMotionProps<"button">, keyof CustomButtonProps> {
+  children: ReactNode;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+  fullWidth?: boolean;
+}
+
+// Define custom props separately to avoid TypeScript errors
+interface CustomButtonProps {
   children: ReactNode;
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
