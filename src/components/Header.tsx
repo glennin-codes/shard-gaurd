@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { useTelegram } from '../context/TelegramContext';
-import ThemeToggle from './ThemeToggle';
+import { motion } from "framer-motion";
+import { useTelegram } from "../context/TelegramContext";
+import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   const { user, isDarkMode } = useTelegram();
@@ -35,14 +35,14 @@ const Header = () => {
         <div className="flex items-center space-x-2">
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-full ${
-              isDarkMode ? 'bg-blue-500' : 'bg-blue-600'
+              isDarkMode ? "bg-blue-500" : "bg-blue-600"
             } text-white`}
           >
-            {user?.firstName?.[0] || 'T'}
+            {user?.firstName?.[0] || "T"}
           </div>
           <div className="hidden text-sm sm:block">
             <p className="font-medium text-slate-700 dark:text-slate-200">
-              {user?.firstName || 'Telegram User'}
+              {user?.firstName || "Telegram User"}
             </p>
           </div>
         </div>
@@ -51,4 +51,4 @@ const Header = () => {
   );
 };
 
-export default Header; 
+export default Header;

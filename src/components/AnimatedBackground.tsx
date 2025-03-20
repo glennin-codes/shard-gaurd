@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useTelegram } from '../context/TelegramContext';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useTelegram } from "../context/TelegramContext";
 
 const generateParticles = (count: number) => {
   return Array.from({ length: count }, (_, i) => ({
@@ -23,8 +23,8 @@ const AnimatedBackground = () => {
       setParticles(generateParticles(50));
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -32,9 +32,7 @@ const AnimatedBackground = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className={`absolute rounded-full ${
-            isDarkMode ? 'bg-blue-400/10' : 'bg-blue-600/10'
-          }`}
+          className={`absolute rounded-full ${isDarkMode ? "bg-blue-400/10" : "bg-blue-600/10"}`}
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
@@ -42,16 +40,8 @@ const AnimatedBackground = () => {
             height: `${particle.size}rem`,
           }}
           animate={{
-            x: [
-              Math.random() * 100 - 50,
-              Math.random() * 100 - 50,
-              Math.random() * 100 - 50,
-            ],
-            y: [
-              Math.random() * 100 - 50,
-              Math.random() * 100 - 50,
-              Math.random() * 100 - 50,
-            ],
+            x: [Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50],
+            y: [Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50],
             scale: [1, 1.5, 1],
             opacity: [0.2, 0.7, 0.2],
           }}
@@ -59,19 +49,19 @@ const AnimatedBackground = () => {
             duration: particle.duration,
             repeat: Infinity,
             delay: particle.delay,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         />
       ))}
-      <div 
+      <div
         className={`absolute inset-0 ${
-          isDarkMode 
-            ? 'bg-gradient-to-br from-slate-900 via-slate-900/95 to-blue-900/20' 
-            : 'bg-gradient-to-br from-white via-slate-50/95 to-blue-100/20'
-        }`} 
+          isDarkMode
+            ? "bg-gradient-to-br from-slate-900 via-slate-900/95 to-blue-900/20"
+            : "bg-gradient-to-br from-white via-slate-50/95 to-blue-100/20"
+        }`}
       />
     </div>
   );
 };
 
-export default AnimatedBackground; 
+export default AnimatedBackground;

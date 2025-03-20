@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { ReactNode } from "react";
+import { motion } from "framer-motion";
 
 interface CardProps {
   children: ReactNode;
@@ -8,7 +8,7 @@ interface CardProps {
   className?: string;
 }
 
-const Card = ({ children, title, icon, className = '' }: CardProps) => {
+const Card = ({ children, title, icon, className = "" }: CardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -20,9 +20,7 @@ const Card = ({ children, title, icon, className = '' }: CardProps) => {
         <div className="flex items-center gap-2 border-b border-slate-200 px-6 py-4 dark:border-slate-700">
           {icon && <div className="text-blue-500 dark:text-blue-400">{icon}</div>}
           {title && (
-            <h3 className="text-xl font-medium text-slate-800 dark:text-slate-200">
-              {title}
-            </h3>
+            <h3 className="text-xl font-medium text-slate-800 dark:text-slate-200">{title}</h3>
           )}
         </div>
       )}
@@ -31,4 +29,4 @@ const Card = ({ children, title, icon, className = '' }: CardProps) => {
   );
 };
 
-export default Card; 
+export default Card;

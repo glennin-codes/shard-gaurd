@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import "./index.css";
 import App from "./App.tsx";
+import eruda from "eruda";
 
 // Add types for Eruda
 declare global {
@@ -16,12 +17,16 @@ declare global {
 
 // Add console error reporting to help debug issues
 console.log("App starting...");
+//enable eruda from eruda package
+eruda.init();
+console.log("Eruda initialized programmatically");
+
 
 // Helper function to enable Eruda programmatically from code
 const enableEruda = () => {
-  if (typeof window !== 'undefined' && window.eruda && !window.eruda._isInit) {
+  if (typeof window !== "undefined" && window.eruda && !window.eruda._isInit) {
     window.eruda.init({
-      tool: ['console', 'elements', 'network', 'resources', 'info'],
+      tool: ["console", "elements", "network", "resources", "info"],
       useShadowDom: true,
       autoScale: true,
     });
@@ -34,9 +39,10 @@ const enableEruda = () => {
 window.enableErudaDebugger = enableEruda;
 
 // Enable Eruda if debug=true or debug=1 is in the URL
-if (typeof window !== 'undefined' && 
-    (window.location.search.includes('debug=true') || 
-     window.location.search.includes('debug=1'))) {
+if (
+  typeof window !== "undefined" &&
+  (window.location.search.includes("debug=true") || window.location.search.includes("debug=1"))
+) {
   console.log("Debug mode enabled via URL parameter");
   enableEruda();
 }
@@ -53,7 +59,7 @@ try {
   createRoot(rootElement).render(
     <StrictMode>
       <App />
-    </StrictMode>
+    </StrictMode>,
   );
   console.log("App rendered");
 } catch (error) {
@@ -71,7 +77,7 @@ try {
       </button>
     </div>
   `;
-  
+
   // Auto-enable Eruda on errors
   enableEruda();
 }
