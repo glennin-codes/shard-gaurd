@@ -40,7 +40,7 @@ export const SharesProvider = ({ children }: { children: ReactNode }) => {
         if (storedData) {
           const parsedData = JSON.parse(storedData) as SharesData;
           setSharesData(parsedData);
-          
+
           // Set user shares if user exists
           if (user && user.id && parsedData[user.id]) {
             setUserShares(parsedData[user.id]);
@@ -52,7 +52,7 @@ export const SharesProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     };
-    
+
     loadShares();
   }, [user]);
 
@@ -82,14 +82,14 @@ export const SharesProvider = ({ children }: { children: ReactNode }) => {
     try {
       const newData = { ...sharesData, [telegramId]: shares };
       const success = await saveSharesData(newData);
-      
+
       if (success) {
         setSharesData(newData);
         if (user && user.id === telegramId) {
           setUserShares(shares);
         }
       }
-      
+
       return success;
     } catch (error) {
       console.error("Error saving shares:", error);
@@ -108,16 +108,16 @@ export const SharesProvider = ({ children }: { children: ReactNode }) => {
     try {
       const newData = { ...sharesData };
       delete newData[telegramId];
-      
+
       const success = await saveSharesData(newData);
-      
+
       if (success) {
         setSharesData(newData);
         if (user && user.id === telegramId) {
           setUserShares(null);
         }
       }
-      
+
       return success;
     } catch (error) {
       console.error("Error deleting shares:", error);

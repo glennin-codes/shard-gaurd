@@ -10,8 +10,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const { ready, error, debug } = useTelegram();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
-//enable ed
-
+  //enable ed
 
   // Set a fallback timer to prevent getting stuck on loading screen
   useEffect(() => {

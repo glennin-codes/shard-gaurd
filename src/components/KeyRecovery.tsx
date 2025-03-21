@@ -3,7 +3,7 @@ import Card from "./Card";
 import Button from "./Button";
 import Input from "./Input";
 import { useShares } from "../context/SharesContext";
-import { combineShares, getAddressFromPrivateKey } from "../utils/shamir";
+import { combineShares } from "../utils/shamir";
 import { toast } from "react-hot-toast";
 
 interface ShareInput {
@@ -14,8 +14,7 @@ interface ShareInput {
 const KeyRecovery = () => {
   const { userShares, isLoading: sharesLoading } = useShares();
   const [shareInputs, setShareInputs] = useState<ShareInput[]>([{ id: 1, shareString: "" }]);
-  const [recoveredKey, setRecoveredKey] = useState("");
-  const [recoveredAddress, setRecoveredAddress] = useState("");
+  const [recoveredSecret, setRecoveredSecret] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Display a loading state when either local loading or shares loading is active
@@ -42,7 +41,7 @@ const KeyRecovery = () => {
   };
 
   // Select a user share
-  const selectUserShare = (shareString: string) => {
+  const selectUserShare = (shareString: string, index: number) => {
     try {
       // Find or create a share input slot
       const availableSlot = shareInputs.find((s) => !s.shareString);
@@ -61,36 +60,13 @@ const KeyRecovery = () => {
     }
   };
 
-  // Parse and validate a share string
-  const validateShareString = (shareString: string) => {
-    try {
-      // Try parsing as JSON
-      const parsed = JSON.parse(shareString.trim());
-      // Check if it has x and y properties
-      if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'string') {
-        return true;
-      }
-      return false;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  // Recover the private key from the shares
-  const recoverKey = async () => {
+  // Recover the secret from the shares
+  const recoverSecret = async () => {
     // Filter out empty shares
     const nonEmptyShares = shareInputs.filter((s) => s.shareString.trim() !== "");
-    
-    if (nonEmptyShares.length < 2) {
-      toast.error("You need at least 2 valid shares to recover the key");
-      return;
-    }
 
-    // Validate each share
-    const validShares = nonEmptyShares.filter(s => validateShareString(s.shareString));
-    
-    if (validShares.length < 2) {
-      toast.error("At least 2 valid share keys are required. Please check your format.");
+    if (nonEmptyShares.length < 2) {
+      toast.error("You need at least 2 valid shares to recover the secret");
       return;
     }
 
@@ -98,30 +74,19 @@ const KeyRecovery = () => {
 
     try {
       // Use the share strings directly
-      const formattedShares = validShares.map(s => s.shareString.trim());
-      
-      console.log("Attempting to recover with shares:", formattedShares.map(s => {
-        try {
-          const parsed = JSON.parse(s);
-          return { x: parsed.x, yPrefix: parsed.y.substring(0, 10) + "..." };
-        } catch (e) {
-          return "Invalid JSON";
-        }
-      }));
+      const formattedShares = nonEmptyShares.map((s) => s.shareString.trim());
 
-      // Recover the key
-      const key = await combineShares(formattedShares);
-      console.log("Successfully recovered key with these shares");
+      console.log("Attempting to recover with shares:", formattedShares.length);
 
-      // Get the address from the key
-      const address = getAddressFromPrivateKey(key);
+      // Recover the secret
+      const secret = await combineShares(formattedShares);
+      console.log("Successfully recovered secret with these shares");
 
-      setRecoveredKey(`0x${key}`);
-      setRecoveredAddress(address);
-      toast.success("Private key recovered successfully!");
+      setRecoveredSecret(secret);
+      toast.success("Secret recovered successfully!");
     } catch (error) {
-      console.error("Failed to recover key:", error);
-      toast.error("Failed to recover the private key. Please check your shares and try again.");
+      console.error("Failed to recover secret:", error);
+      toast.error("Failed to recover the secret. Please check your shares and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -129,14 +94,13 @@ const KeyRecovery = () => {
 
   const resetRecovery = () => {
     setShareInputs([{ id: 1, shareString: "" }]);
-    setRecoveredKey("");
-    setRecoveredAddress("");
+    setRecoveredSecret("");
   };
 
   // Content while loading
   if (showLoading) {
     return (
-      <Card title="Recover Your Private Key" className="max-w-lg">
+      <Card title="Recover Your Secret" className="max-w-lg">
         <div className="flex flex-col items-center justify-center py-10">
           <div className="mb-4 h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
           <p className="text-slate-600 dark:text-slate-300">Loading your shares...</p>
@@ -146,30 +110,23 @@ const KeyRecovery = () => {
   }
 
   return (
-    <Card title="Recover Your Private Key" className="max-w-lg">
+    <Card title="Recover Your Secret" className="max-w-lg">
       <div className="space-y-6">
         {/* User's saved shares (if any) */}
         {userShares && userShares.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-medium text-slate-800 dark:text-slate-200">Your Saved Shares</h3>
             <div className="flex flex-wrap gap-2">
-              {userShares.map((share, index) => {
-                try {
-                  const parsedShare = JSON.parse(share);
-                  return (
-                    <Button
-                      key={index}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => selectUserShare(share)}
-                    >
-                      Share #{parsedShare.x}
-                    </Button>
-                  );
-                } catch (e) {
-                  return null; // Skip invalid shares
-                }
-              })}
+              {userShares.map((share, index) => (
+                <Button
+                  key={index}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => selectUserShare(share, index)}
+                >
+                  Share #{index + 1}
+                </Button>
+              ))}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Click on a share to add it to the recovery form
@@ -181,14 +138,14 @@ const KeyRecovery = () => {
         <div className="space-y-3">
           <h3 className="font-medium text-slate-800 dark:text-slate-200">Enter Shares Manually</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Enter your share key in the format: {`{"x":1,"y":"12345..."}`}
+            Enter your Base64-encoded share values
           </p>
           {shareInputs.map((share) => (
             <div key={share.id} className="flex items-center space-x-2">
               <div className="flex-1">
                 <Input
-                  label={share.id === 1 ? "Share Key" : ""}
-                  placeholder='{"x":1,"y":"12345..."}'
+                  label={share.id === 1 ? "Share Value" : ""}
+                  placeholder="Enter share value"
                   value={share.shareString}
                   onChange={(e) => updateShareInput(share.id, e.target.value)}
                   fullWidth
@@ -220,15 +177,15 @@ const KeyRecovery = () => {
 
         {/* Recovery button */}
         <div className="flex space-x-3">
-          <Button onClick={recoverKey} isLoading={isLoading} fullWidth>
-            Recover Private Key
+          <Button onClick={recoverSecret} isLoading={isLoading} fullWidth>
+            Recover Secret
           </Button>
         </div>
 
         {/* Debug section - only visible in development */}
-        {process.env.NODE_ENV === 'development' && userShares && userShares.length >= 2 && (
-          <div className="border-t border-dashed border-slate-300 mt-4 pt-4 dark:border-slate-600">
-            <h3 className="font-medium text-slate-800 dark:text-slate-200 mb-2">Debug Tools</h3>
+        {process.env.NODE_ENV === "development" && userShares && userShares.length >= 2 && (
+          <div className="mt-4 border-t border-dashed border-slate-300 pt-4 dark:border-slate-600">
+            <h3 className="mb-2 font-medium text-slate-800 dark:text-slate-200">Debug Tools</h3>
             <div className="grid grid-cols-2 gap-2">
               {userShares.length >= 2 && (
                 <Button
@@ -236,17 +193,11 @@ const KeyRecovery = () => {
                   variant="outline"
                   onClick={() => {
                     // Test recovery with shares 1 & 2
-                    try {
-                      const share1 = JSON.parse(userShares[0]);
-                      const share2 = JSON.parse(userShares[1]);
-                      setShareInputs([
-                        { id: 1, shareString: JSON.stringify(share1) }, 
-                        { id: 2, shareString: JSON.stringify(share2) }
-                      ]);
-                      console.log("Added shares 1 & 2 for testing");
-                    } catch (e) {
-                      console.error("Failed to parse shares:", e);
-                    }
+                    setShareInputs([
+                      { id: 1, shareString: userShares[0] },
+                      { id: 2, shareString: userShares[1] },
+                    ]);
+                    console.log("Added shares 1 & 2 for testing");
                   }}
                 >
                   Test Shares 1 & 2
@@ -258,17 +209,11 @@ const KeyRecovery = () => {
                   variant="outline"
                   onClick={() => {
                     // Test recovery with shares 2 & 3
-                    try {
-                      const share2 = JSON.parse(userShares[1]);
-                      const share3 = JSON.parse(userShares[2]);
-                      setShareInputs([
-                        { id: 1, shareString: JSON.stringify(share2) }, 
-                        { id: 2, shareString: JSON.stringify(share3) }
-                      ]);
-                      console.log("Added shares 2 & 3 for testing");
-                    } catch (e) {
-                      console.error("Failed to parse shares:", e);
-                    }
+                    setShareInputs([
+                      { id: 1, shareString: userShares[1] },
+                      { id: 2, shareString: userShares[2] },
+                    ]);
+                    console.log("Added shares 2 & 3 for testing");
                   }}
                 >
                   Test Shares 2 & 3
@@ -280,17 +225,11 @@ const KeyRecovery = () => {
                   variant="outline"
                   onClick={() => {
                     // Test recovery with shares 1 & 3
-                    try {
-                      const share1 = JSON.parse(userShares[0]);
-                      const share3 = JSON.parse(userShares[2]);
-                      setShareInputs([
-                        { id: 1, shareString: JSON.stringify(share1) }, 
-                        { id: 2, shareString: JSON.stringify(share3) }
-                      ]);
-                      console.log("Added shares 1 & 3 for testing");
-                    } catch (e) {
-                      console.error("Failed to parse shares:", e);
-                    }
+                    setShareInputs([
+                      { id: 1, shareString: userShares[0] },
+                      { id: 2, shareString: userShares[2] },
+                    ]);
+                    console.log("Added shares 1 & 3 for testing");
                   }}
                 >
                   Test Shares 1 & 3
@@ -306,46 +245,47 @@ const KeyRecovery = () => {
                     try {
                       toast.success("Testing all possible combinations...");
                       console.log("Testing all combinations of shares:");
-                      
-                      // Parse all shares
-                      const parsedShares = userShares.map(s => {
-                        try {
-                          return JSON.parse(s);
-                        } catch (e) {
-                          console.error("Failed to parse share:", s);
-                          return null;
-                        }
-                      }).filter(Boolean);
-                      
-                      console.log(`Found ${parsedShares.length} valid shares`);
-                      
+
                       // Generate all possible combinations of 2 or more shares
-                      for (let size = 2; size <= parsedShares.length; size++) {
+                      for (let size = 2; size <= userShares.length; size++) {
                         console.log(`Testing combinations of ${size} shares:`);
-                        
+
                         // Helper function to generate combinations
-                        const generateCombinations = (arr: any[], size: number, start = 0, current: any[] = []): void => {
+                        const generateCombinations = (
+                          arr: any[],
+                          size: number,
+                          start = 0,
+                          current: any[] = [],
+                        ): void => {
                           if (current.length === size) {
                             // Test this combination
-                            const combo = current.map(item => JSON.stringify(item));
-                            const shareIndexes = current.map(item => item.x);
-                            console.log(`Testing combination: [${shareIndexes.join(', ')}]`);
-                            
+                            const combo = current;
+                            console.log(`Testing combination of ${combo.length} shares`);
+
                             combineShares(combo)
-                              .then(key => console.log(`✅ Successfully recovered with shares [${shareIndexes.join(', ')}]`))
-                              .catch(err => console.error(`❌ Failed to recover with shares [${shareIndexes.join(', ')}]:`, err));
-                            
+                              .then((secret) =>
+                                console.log(
+                                  `✅ Successfully recovered secret with ${combo.length} shares`,
+                                ),
+                              )
+                              .catch((err) =>
+                                console.error(
+                                  `❌ Failed to recover with ${combo.length} shares:`,
+                                  err,
+                                ),
+                              );
+
                             return;
                           }
-                          
+
                           for (let i = start; i < arr.length; i++) {
                             generateCombinations(arr, size, i + 1, [...current, arr[i]]);
                           }
                         };
-                        
-                        generateCombinations(parsedShares, size);
+
+                        generateCombinations(userShares, size);
                       }
-                      
+
                       toast.success("Combination testing completed. Check console for results.");
                     } catch (error) {
                       console.error("Error testing combinations:", error);
@@ -362,27 +302,19 @@ const KeyRecovery = () => {
           </div>
         )}
 
-        {/* Recovered key & address */}
-        {recoveredKey && (
+        {/* Recovered secret */}
+        {recoveredSecret && (
           <div className="space-y-4 rounded-md bg-green-50 p-4 dark:bg-green-900/20">
             <div>
               <h3 className="font-medium text-green-800 dark:text-green-300">
-                Key Recovered Successfully!
+                Secret Recovered Successfully!
               </h3>
               <div className="mt-2">
                 <div className="mb-1 text-sm font-medium text-green-700 dark:text-green-200">
-                  Private Key:
+                  Your Secret:
                 </div>
                 <div className="break-all rounded bg-white p-2 font-mono text-xs dark:bg-slate-800">
-                  {recoveredKey}
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="mb-1 text-sm font-medium text-green-700 dark:text-green-200">
-                  Ethereum Address:
-                </div>
-                <div className="break-all rounded bg-white p-2 font-mono text-xs dark:bg-slate-800">
-                  {recoveredAddress}
+                  {recoveredSecret}
                 </div>
               </div>
             </div>

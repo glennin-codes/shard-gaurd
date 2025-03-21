@@ -21,7 +21,6 @@ console.log("App starting...");
 eruda.init();
 console.log("Eruda initialized programmatically");
 
-
 // Helper function to enable Eruda programmatically from code
 const enableEruda = () => {
   if (typeof window !== "undefined" && window.eruda && !window.eruda._isInit) {
